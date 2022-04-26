@@ -14,3 +14,5 @@ Star service to network connection. Can check connection with `ping -c 1 google.
 - check TYPE of BIOS or UEFI
 ```
   ls /sys/firmware/efi/efivars
+```
+<img src="https://github.com/NEYKTO/qtile/raw/main/Captura.png" width="512"/>
