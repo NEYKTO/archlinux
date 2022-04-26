@@ -15,4 +15,4 @@ Star service to network connection. Can check connection with `ping -c 1 google.
 ```
   ls /sys/firmware/efi/efivars
 ```
-<img src="https://github.com/NEYKTO/qtile/raw/main/Captura.png" width="512"/>
+<img src="https://github.com/NEYKTO/archlinux/images/cap_1.png" width="512"/>
