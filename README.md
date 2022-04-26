@@ -26,7 +26,7 @@ Star service to network connection. Can check connection with `ping -c 1 google.
   ```
   
 <img src="https://github.com/NEYKTO/archlinux/blob/main/.images/cap_2.png" width="512"/>
-Exemple for HardDrive 20Gb size
+** Exemple for HardDrive 20Gb size **
 
 Select `gpt` after this, create first boot drive `New` -> `512M` -> `Enter`-> `Type` -> `EFI System` -> `Enter`
 
