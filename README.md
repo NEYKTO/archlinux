@@ -41,6 +41,11 @@ Go to `Write` and `yes` to confirm with `Enter`
 To finish just `Quit`
 
 - Formating partitions
-```mkfs.vfat -F32 /dev/sda1´´´
+```
+  mkfs.vfat -F32 /dev/sda1
+  mkfs.ext4 /dev/sda2
+  mkswap /dev/sda3
+  swapon
+```
 
 
