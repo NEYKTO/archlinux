@@ -74,3 +74,10 @@ Disk partitions BIOS
 git add README.md
 # Make the commit
 git commit -m "Added readme"
+  
+  //syntax
+KEYWORD #ISSUE-NUMBER
+// example1
+close #10
+// example2
+I added something to fix #1
