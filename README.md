@@ -24,7 +24,7 @@ Star service to network connection. Can check connection with `ping -c 1 google.
  -
  type:
  ```
-  cfdisk
+  cfdisk /dev/sda
   ```
   
 <img src="https://github.com/NEYKTO/archlinux/blob/main/.images/cap_2.png" width="512"/>
@@ -69,5 +69,7 @@ Disk partitions BIOS
 - check TYPE of [BIOS](#disk-partitions-bios) or [UEFI](#disk-partitions-uefi)
 
 <img src="https://github.com/NEYKTO/archlinux/blob/main/.images/cap_3.png" width="512"/>
+
+cfdisk /dev/sda
 
 
