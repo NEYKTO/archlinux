@@ -66,18 +66,8 @@ mount /dev/sda1/ /mtn/boot/efi
 
 Disk partitions BIOS
 -
+- check TYPE of [BIOS](#disk-partitions-bios) or [UEFI](#disk-partitions-uefi)
 
 <img src="https://github.com/NEYKTO/archlinux/blob/main/.images/cap_3.png" width="512"/>
 
-<create your readme file>
-# Stage the readme change
-git add README.md
-# Make the commit
-git commit -m "Added readme"
-  
-  //syntax
-KEYWORD #ISSUE-NUMBER
-// example1
-close #10
-// example2
-I added something to fix #1
+
