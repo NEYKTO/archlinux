@@ -11,7 +11,9 @@ Star service to network connection. Can check connection with `ping -c 1 google.
   systemctl enable NetworkManager
 ```
 
-- check TYPE of BIOS or UEFI
+- check TYPE of [BIOS](#disk-partitions-bios) or [UEFI](#disk-partitions-uefi)
+
+
 ```
   ls /sys/firmware/efi/efivars
 ```
