@@ -70,6 +70,9 @@ Disk partitions BIOS
 
 <img src="https://github.com/NEYKTO/archlinux/blob/main/.images/cap_3.png" width="512"/>
 
-cfdisk /dev/sda
+```
+  cfdisk /dev/sda
+```
+<img src="https://github.com/NEYKTO/archlinux/blob/main/.images/cap_4.png" width="512"/>
 
 
