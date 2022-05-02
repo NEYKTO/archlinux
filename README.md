@@ -18,7 +18,7 @@ Star service to network connection. Can check connection with `ping -c 1 google.
 <img src="https://github.com/NEYKTO/archlinux/blob/main/.images/cap_1.png" width="512"/>
 
 
- Disk partitions
+ Disk partitions UEFI
  -
  type:
  ```
@@ -48,8 +48,8 @@ To finish just `Quit`
   swapon
 ```
 
-Mounting
--
+- Mounting
+
 ```
   mount /dev/sda2 /mnt
 ```
@@ -60,7 +60,10 @@ mkdir /mnt/boot
 mkdir /mnt/boot/efi
 
 mount /dev/sda1/ /mtn/boot/efi
+```
 
+Disk partitions BIOS
+-
 
 
 
