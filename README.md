@@ -69,4 +69,8 @@ Disk partitions BIOS
 
 <img src="https://github.com/NEYKTO/archlinux/blob/main/.images/cap_3.png" width="512"/>
 
-git commit -m "closes #1, closes #2, closes #3; remaining commit message"
+<create your readme file>
+# Stage the readme change
+git add README.md
+# Make the commit
+git commit -m "Added readme"
