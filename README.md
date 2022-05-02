@@ -67,6 +67,7 @@ mount /dev/sda1/ /mtn/boot/efi
 Disk partitions BIOS
 -
 
+<img src="https://github.com/NEYKTO/archlinux/blob/main/.images/cap_3.png" width="512"/>
 
 
 
