@@ -48,4 +48,20 @@ To finish just `Quit`
   swapon
 ```
 
+Mounting
+-
+```
+  mount /dev/sda2 /mnt
+```
+where SDA2 drive is Linux filesystem base
+creating folder for boot 
+```
+mkdir /mnt/boot
+mkdir /mnt/boot/efi
+
+mount /dev/sda1/ /mtn/boot/efi
+
+
+
+
 
