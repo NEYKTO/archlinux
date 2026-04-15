@@ -1,0 +1,241 @@
+# Load keyboard layout
+loadkeys us
+
+# Connect to WLAN (if not LAN).
+# See https://wiki.archlinux.org/title/Iwd#iwctl for Wifi setup.
+iwctl --passphrase [password] station wlan0 connect [network]
+
+# Check internet connection.
+ping -c4 www.archlinux.org
+
+# This is an optional step, I prefer doing the install process using a different machine
+# so I can copy and paste commands. For that, we need to set a root password, and get our IP address
+# so we can connect via ssh.
+passwd
+ip addr
+systemctl start sshd
+# Connect from another machine.
+ssh root@ip
+
+# Ensure system time is accurate.
+timedatectl set-ntp true
+
+# List drives
+lsblk
+
+# Create partitions
+gdisk /dev/sda
+# Partition 1: +512M ef00 (for EFI)
+# Partition 2: Available space 8300 (for Linux filesystem)
+# Write w, Confirm Y
+
+# Setup encryption on the root drive.
+cryptsetup luksFormat /dev/sda2 # setup password
+cryptsetup luksOpen /dev/sda2 root # type password
+
+# Make file systems.
+mkfs.fat -F32 -n ArchEFI /dev/sda1
+mkfs.btrfs -L Arch /dev/mapper/root
+
+# Creating btrfs subvols.
+mount -o compress=zstd,noatime /dev/mapper/root /mnt
+btrfs subvol create /mnt/@
+btrfs subvol create /mnt/@home
+btrfs subvol create /mnt/@swap
+
+mkdir /mnt/snapshots
+btrfs subvol create /mnt/snapshots/@
+btrfs subvol create /mnt/snapshots/@home
+
+umount /mnt
+
+# Mount the main @ and @home subvols.
+mount -o compress=zstd,noatime,subvol=@ /dev/mapper/root /mnt
+mkdir -p /mnt/{boot,home}
+mount -o compress=zstd,noatime,subvol=@home /dev/mapper/root /mnt/home
+
+# Make some subvols for various things so that they are either excluded from backups,
+# or so we can disable CoW.
+mkdir /mnt/var
+btrfs subvol create /mnt/var/cache
+btrfs subvol create /mnt/var/log
+
+mkdir -p /mnt/var/lib/{mysql,postgres,machines}
+chattr +C /mnt/var/lib/{mysql,postgres,machines}
+
+# Mount boot
+mount /dev/sda1 /mnt/boot
+
+# Bootstrap that OS!
+pacstrap /mnt base base-devel linux linux-firmware intel-ucode amd-ucode sudo rsync neovim reflector
+
+# Generate fstab
+genfstab -U /mnt >> /mnt/etc/fstab
+cat /mnt/etc/fstab
+# I update root / and /home to load from /dev/mapper/root instead of UUID.
+vim /mnt/etc/fstab
+
+# Finally chroot into the system, so we can finish our setup.
+arch-chroot /mnt
+
+
+#===========================
+# Now the fun setup begins.
+#===========================
+
+# Sort out time.
+ln -sf /usr/share/zoneinfo/Europe/London /etc/localtime
+hwclock --systohc
+
+# Keep time in sync
+timedatectl set-ntp true
+
+# Update pacman mirror list (wtih reflector).
+reflector -c "United Kingdom," -p https -a 3 --sort rate --save /etc/pacman.d/mirrorlist
+
+pacman -Syy
+
+# Install the rest of my packages.
+pacman -S \
+acpid adobe-source-code-pro-fonts bat blueberry bluez \
+brightnessctl btop btrfs-progs cargo chromium cifs-utils clang cups cups-browsed \
+cups-filters cups-pdf dmidecode docker docker-buildx docker-compose \
+dust edk2-ovmf exfat-utils eza fastfetch fd ffmpeg ffmpegthumbnailer \
+firefox fontconfig fzf gcc14 git github-cli gnome-calculator gnome-keyring \
+gnome-themes-extra gvfs-mtp gvfs-smb helm hypridle hyprland hyprland-qtutils \
+hyprlock hyprpicker hyprshot hyprsunset imagemagick imv inetutils iwd jq \
+kitty kubectl kvantum-qt5 less libqalculate llvm luarocks mako man mariadb-libs mpv \
+mpv-mpris nautilus noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra \
+nss-mdns pacman-contrib pipewire-alsa pipewire-audio pipewire-pulse \
+playerctl plocate polkit-gnome poppler postgresql-libs python-gobject \
+python-poetry-core qemu-full resvg ripgrep slurp swaybg \
+swayosd system-config-printer tldr tree-sitter-cli ttf-bitstream-vera \
+ttf-cascadia-mono-nerd ttf-fira-mono ttf-firacode-nerd ttf-liberation \
+ttf-opensans ttf-roboto ufw uwsm unzip virt-manager waybar wf-recorder whois \
+wireless-regdb wireplumber woff2-font-awesome xdg-desktop-portal-gtk \
+xdg-desktop-portal-hyprland xmlstarlet yazi zoxide zsh
+
+# Set lang
+nvim /etc/locale.gen # Uncomment en_GB.UTF-8 (or your locale)
+locale-gen
+echo LANG=en_GB.UTF-8 > /etc/locale.conf
+
+# Setup keyboard.
+echo keymap=us > /etc/vconsole.conf # I use an ANSI keyboard, so got used to US
+
+# Set hostname and localhost
+echo "arch" >> /etc/hostname
+echo "127.0.0.1 localhost" >> /etc/hosts
+echo "::1 localhost" >> /etc/hosts
+echo "127.0.1.1 arch.localdomain arch" >> /etc/hosts
+
+# Set root password
+passwd
+
+# Create your user
+useradd -m -G wheel,users,docker,libvirt,kvm -s /usr/bin/zsh rich
+passwd rich # Enter password
+
+systemctl enable bluetooth
+systemctl enable cups
+systemctl enable sshd
+systemctl enable reflector.timer
+systemctl enable fstrim.timer
+systemctl enable acpid
+systemctl enable docker
+systemctl enable libvirtd
+
+# Use greetd for basic auto-login. This is a single user system, I use luks as password on boot.
+# Add:
+#
+#+ [initial_session]
+#+ command = "Hyprland"
+#+ user = "rich"
+pacman -Sy greetd
+systemctl enable greetd
+nvim /etc/greetd/config.toml
+
+# Edit /etc/mkinitcpio.conf to add btrfs binary, and update hooks:
+# - HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)
+# + HOOKS=(base systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesystems fsck)
+#
+# - BINARIES=()
+# + BINARIES=(btrfs)
+sudo nvim /etc/mkinitcpio.conf
+
+mkinitcpio -P
+
+# Install boot loader (systemd-boot).
+bootctl --path=/boot install
+
+# Create /boot/loader/entries/arch.conf
+# get UUIDs for drive with blkid. We want the UUID of the partiton holding luks, not luks itself.
+# blkid /dev/sda2
+echo "title Arch Linux
+linux /vmlinuz-linux
+initrd /amd-ucode.img
+initrd /initramfs-linux.img
+options rd.luks.name=DRIVE_UUID=root root=/dev/mapper/root rootflags=subvol=@ rd.luks.options=discard rw" > /boot/loader/entries/arch.conf
+
+
+# Enable wheel group in sudo
+# uncomment #%wheel ALL=(ALL:ALL) ALL
+EDITOR=nvim visudo
+
+# Ensure networking is enabled.
+echo "[Match]
+Name=en*
+
+[Network]
+Bridge=br0" > /etc/systemd/network/25-br0-en.network
+
+echo "[NetDev]
+Name=br0
+Kind=bridge" > /etc/systemd/network/25-br0.netdev
+
+echo "[Match]
+Name=br0
+
+[Network]
+DHCP=yes
+MulticastDNS=yes
+LLMNR=no
+
+[DHCPv4]
+RouteMetric=100
+
+[IPv6AcceptRA]
+RouteMetric=100" > /etc/systemd/network/25-br0.network
+
+systemctl enable systemd-networkd
+systemctl enable systemd-resolved
+ln -sf ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
+# Now I would get my dot files setup.
+su rich
+cd ~/
+# https for now, would later move to ssh
+git clone --bare --recursive https://github.com/RichGuk/dotfiles.git $HOME/.dotfiles
+alias dots='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
+dots checkout
+dots submodule update
+dots config --local status.showUntrackedFiles no
+exit
+
+# We're done, time to try booting :)
+exit
+umount -R /mnt
+reboot
+
+
+
+
+Extra setup
+
+# Let's get yay setup for AUR packages.
+git clone https://aur.archlinux.org/yay.git /tmp/yay
+cd /tmp/yay
+makepkg -si
+
+yay -S adw-gtk3 delta archlinux-artwork walker elephant elephant-desktopapplications elephant-calc \
+elephant-menus elephant-symbols catppuccin-gtk-theme-mocha localsend yaru-icon-theme spotify brave-bin
